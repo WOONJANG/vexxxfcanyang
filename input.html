@@ -26,7 +26,7 @@
     <h1>펀치머신 점수 입력</h1>
     <form id="scoreForm" autocomplete="off">
       <label for="name">이름</label>
-      <input id="name" name="name" placeholder="예: 브이엑스" autocomplete="name" required>
+      <input id="name" name="name" placeholder="예: 김펀치" autocomplete="name" required>
 
       <div class="row">
         <div>
@@ -49,29 +49,26 @@
 </div>
 
 <script>
-  // GAS 최신 배포 URL (/exec)
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyKiqbUe7jJY5iZpjt6Deq17jHhMlYjUgGL6D_Jz2_p4JPgoDXuMJ5fUSI3wZDFuWwZBQ/exec';
+  // 당신이 제공한 GAS 최신 배포 URL (/exec)
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbza1QVoob_QeyfWaB8NjaYHaSys7YRkNvoqVlbmkPGonch_ajcaxSYb2odRiR3IZs_x/exec';
 
   const $ = s => document.querySelector(s);
   const onlyDigits = s => (s||'').replace(/\D/g,'');
 
   // 편의: 이름/PIN 로컬 저장
-  const LS = {
-    name: 'punch_name_v1',
-    pin:  'punch_pin_v1'
-  };
+  const LS = { name:'punch_name_v1', pin:'punch_pin_v1' };
   window.addEventListener('DOMContentLoaded', ()=>{
     $('#name').value = localStorage.getItem(LS.name) || '';
     $('#pin').value  = localStorage.getItem(LS.pin)  || '';
     $('#name').focus();
   });
 
-  // urlencoded로 보내 프리플라이트(OPTIONS) 회피
+  // 헤더 없이 urlencoded로 보내 프리플라이트(OPTIONS) 회피
   async function sendForm(data){
     const body = new URLSearchParams(data);
     const res = await fetch(GAS_URL, { method:'POST', body }); // 헤더 넣지 않기!
+    // Apps Script는 200만 반환하므로, 본문 파싱 없이도 성공 처리 가능
     if(!res.ok) throw new Error('서버 응답 오류 ' + res.status);
-    // 응답 본문을 꼭 읽을 필요는 없음 (일부 환경에서 CORS로 읽기 제한)
     return true;
   }
 
