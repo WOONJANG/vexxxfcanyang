@@ -24,18 +24,16 @@
   /* 배경: 좌/우 반반 + 검은 비네트 + 좌우 중앙 고정 이미지 2장 */
   body{
     margin:0;
-    /* 위에 적을수록 위 레이어입니다 → 이미지가 그라데이션 위에 표시됨 */
     background-image:
-      url('https://vexxsports.com/web/upload/appfiles/ZaReJam3QiELznoZeGGkMG/33c500ce454f16dfa93af4ccd4dfa047.jpg'),    /* 왼쪽(검정) 영역 중앙 */
-      url('https://www.fc-anyang.com/images/main/team18.png'),   /* 오른쪽(보라) 영역 중앙 */
+      url('https://vexxsports.com/web/upload/appfiles/ZaReJam3QiELznoZeGGkMG/33c500ce454f16dfa93af4ccd4dfa047.jpg'),    /* 왼쪽(검정) */
+      url('https://www.fc-anyang.com/images/main/team18.png'),                                                   /* 오른쪽(보라) */
       radial-gradient(120% 140% at 100% 0%, rgba(0,0,0,.55), transparent 60%),
       radial-gradient(120% 140% at   0% 100%, rgba(0,0,0,.50), transparent 60%),
       linear-gradient(90deg, var(--vexx) 50%, var(--anyang) 50%);
     background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
-    /* 좌측 중앙(25%/50%), 우측 중앙(75%/50%) */
     background-position: 25% 50%, 75% 50%, 100% 0, 0 100%, 0 0;
     background-size: var(--badge-size) auto, var(--badge-size) auto, auto, auto, auto;
-    background-attachment: fixed, fixed, scroll, scroll, scroll; /* 스크롤해도 로고 고정 */
+    background-attachment: fixed, fixed, scroll, scroll, scroll;
     color:var(--text);
     min-height:100vh;
   }
@@ -102,6 +100,31 @@
   .status{color:var(--muted);font-size:13px;margin-top:16px}
   .empty{opacity:.7}
 
+  /* ▼▼ 참여자 랜덤 피드 (아래→위) ▼▼ */
+  .ticker{
+    position: relative;
+    height: 220px;           /* 필요시 높이 조절 */
+    overflow: hidden;
+    border-radius: 12px;
+    margin-top: 14px;
+    background: linear-gradient(180deg, rgba(0,0,0,.22), rgba(0,0,0,.12));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+  }
+  .ticker-line{
+    position: absolute;
+    left: 10px; right: 10px;
+    bottom: -40px;           /* 시작점: 화면 아래 */
+    padding: 8px 12px;
+    font-weight: 800;
+    color: #e6e9ef;
+    background: linear-gradient(90deg, rgba(0,0,0,.35), rgba(79,27,135,.30));
+    border: 1px solid rgba(255,255,255,.06);
+    border-radius: 10px;
+    text-shadow: 0 1px 0 rgba(0,0,0,.5);
+    box-shadow: 0 6px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
+    will-change: transform, opacity;
+  }
+
   /* 작은 화면에서 배지 크기 살짝 축소 */
   @media (max-width: 480px){
     :root{ --badge-size: clamp(96px, 30vmin, 240px); }
@@ -115,7 +138,7 @@
 
 </head><body>
 <div class="wrap">
-  <h1 style="text-align : center;">V-EXX x FC안양 슛팅 챌린지 순위</h1>
+  <h1 style="text-align:center;">V-EXX x FC안양 슛팅 챌린지 순위</h1>
 
   <div class="panel">
     <h2>👑현재 1위👑</h2>
@@ -130,6 +153,12 @@
   <div class="panel">
     <h2>현재 3위</h2>
     <div id="rank3" class="grid"><div class="card empty"><div class="name">해당 순위 없음</div></div></div>
+  </div>
+
+  <!-- ▼ 랜덤 참여자 피드 패널 -->
+  <div class="panel">
+    <h2>참여자 랜덤 피드</h2>
+    <div id="ticker" class="ticker"></div>
   </div>
 
   <div id="status" class="status">연결 대기…</div>
@@ -207,8 +236,7 @@ function top3Groups(sortedItems){
       }
     }
   }
-  // groups[0]=1위, [1]=2위, [2]=3위 (없으면 생략)
-  return groups;
+  return groups; // [1위그룹, 2위그룹, 3위그룹]
 }
 
 /* 렌더링 */
@@ -230,6 +258,68 @@ function renderGroup(hostId, group){
   `).join('');
 }
 
+/* ===== 랜덤 피드 로직 ===== */
+let tickerStarted = false;
+let tickerPool = [];
+let lastKey = null;
+let tickerIntervalId = null;
+
+// 참가자 풀 동기화 (중복 제거)
+function syncTickerPool(items){
+  const seen = new Set();
+  const uniq = [];
+  for(const it of items){
+    const k = `${it.name}|${it.last4}|${it.score}`;
+    if(!seen.has(k)){ seen.add(k); uniq.push(it); }
+  }
+  tickerPool = uniq;
+  if(!tickerStarted && tickerPool.length){
+    startTicker();
+    tickerStarted = true;
+  }
+}
+
+// 풀에서 직전과 다른 임의 항목 뽑기
+function pickRandom(){
+  if(!tickerPool.length) return null;
+  let pick = null, tries = 0;
+  while(tries++ < 6){
+    const it = tickerPool[Math.floor(Math.random()*tickerPool.length)];
+    const k = `${it.name}|${it.last4}|${it.score}`;
+    if(k !== lastKey){ lastKey = k; pick = it; break; }
+  }
+  return pick || tickerPool[0];
+}
+
+// 한 줄 스폰 + 아래→위 애니메이션
+function spawnTickerLine(){
+  const it = pickRandom();
+  if(!it) return;
+  const box = document.querySelector('#ticker');
+  if(!box) return;
+
+  const line = document.createElement('div');
+  line.className = 'ticker-line';
+  line.textContent = `${it.name} ${maskLast4(it.last4)} ${Number(it.score).toLocaleString('ko-KR')}점`;
+  box.appendChild(line);
+
+  const distance = box.clientHeight + 60; // 컨테이너 높이만큼 위로
+  const anim = line.animate([
+    { transform: `translateY(${distance}px)`, opacity: 0 },
+    { transform: `translateY(${distance*0.6}px)`, opacity: .95, offset: .15 },
+    { transform: `translateY(-40px)`, opacity: .95 },
+    { transform: `translateY(-60px)`, opacity: 0 }
+  ], { duration: 7000, easing: 'linear' });
+
+  anim.onfinish = () => line.remove();
+}
+
+// 인터벌 시작
+function startTicker(){
+  if(tickerIntervalId) clearInterval(tickerIntervalId);
+  tickerIntervalId = setInterval(spawnTickerLine, 1400); // 1.4초마다 한 줄
+}
+
 /* 주기 갱신 */
 let timer=null;
 async function tick(){
@@ -243,6 +333,10 @@ async function tick(){
     renderGroup('#rank1', groups[0]);
     renderGroup('#rank2', groups[1]);
     renderGroup('#rank3', groups[2]);
+
+    // ▼ 랜덤 피드 데이터 동기화
+    syncTickerPool(items);
+
     $('#status').textContent='업데이트: ' + fmt(new Date());
   }catch(e){
     $('#status').textContent='오류: ' + e.message;
