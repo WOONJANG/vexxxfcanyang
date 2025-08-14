@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>펀치머신 점수 입력</title>
+<title>슛팅 머신 점수 입력(관리자 페이지)</title>
 <style>
   :root{--bg:#0b1023;--card:#0f172a;--text:#e5e7eb;--muted:#94a3b8;--border:#233052;--accent:#22d3ee}
   *{box-sizing:border-box;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans KR','Malgun Gothic',sans-serif}
@@ -23,14 +23,14 @@
 <body>
 <div class="wrap">
   <div class="card">
-    <h1>펀치머신 점수 입력</h1>
+    <h1>점수 입력</h1>
     <form id="scoreForm" autocomplete="off">
       <label for="name">이름</label>
       <input id="name" name="name" placeholder="예: 브이엑스" autocomplete="name" required>
 
       <div class="row">
         <div>
-          <label for="phone">전화번호(끝 4자리만 공개)</label>
+          <label for="phone">전화번호</label>
           <input id="phone" name="phone" inputmode="numeric" pattern="[0-9\- ]{8,}" placeholder="예: 01012345678" required>
         </div>
         <div>
