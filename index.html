@@ -100,30 +100,32 @@
   .status{color:var(--muted);font-size:13px;margin-top:16px}
   .empty{opacity:.7}
 
-  /* ▼▼ 참여자 랜덤 피드 (아래→위) ▼▼ */
-  .ticker{
-    position: relative;
-    height: 220px;           /* 필요시 높이 조절 */
-    overflow: hidden;
-    border-radius: 12px;
-    margin-top: 14px;
-    background: linear-gradient(180deg, rgba(0,0,0,.22), rgba(0,0,0,.12));
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
-  }
-  .ticker-line{
-    position: absolute;
-    left: 10px; right: 10px;
-    bottom: -40px;           /* 시작점: 화면 아래 */
-    padding: 8px 12px;
-    font-weight: 800;
-    color: #e6e9ef;
-    background: linear-gradient(90deg, rgba(0,0,0,.35), rgba(79,27,135,.30));
-    border: 1px solid rgba(255,255,255,.06);
-    border-radius: 10px;
-    text-shadow: 0 1px 0 rgba(0,0,0,.5);
-    box-shadow: 0 6px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
-    will-change: transform, opacity;
-  }
+/* ▼▼ 참여자 랜덤 피드 (아래→위) — 한 줄 높이 ▼▼ */
+.ticker{
+  position: relative;
+  height: 48px;            /* ← 한 줄 정도 높이 */
+  overflow: hidden;
+  border-radius: 12px;
+  margin-top: 14px;
+  background: linear-gradient(180deg, rgba(0,0,0,.22), rgba(0,0,0,.12));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+}
+.ticker-line{
+  position: absolute;
+  left: 10px; right: 10px;
+  bottom: -32px;           /* ← 시작점 살짝 위로 조정 */
+  padding: 6px 10px;       /* ← 패딩 축소 */
+  font-size: 16px;         /* (선택) 글자 크기 약간 축소 */
+  font-weight: 800;
+  color: #e6e9ef;
+  background: linear-gradient(90deg, rgba(0,0,0,.35), rgba(79,27,135,.30));
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 10px;
+  text-shadow: 0 1px 0 rgba(0,0,0,.5);
+  box-shadow: 0 6px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
+  will-change: transform, opacity;
+}
+
 
   /* 작은 화면에서 배지 크기 살짝 축소 */
   @media (max-width: 480px){
@@ -307,12 +309,13 @@ function spawnTickerLine(){
   const anim = line.animate([
     { transform: `translateY(${distance}px)`, opacity: 0 },
     { transform: `translateY(${distance*0.6}px)`, opacity: .95, offset: .15 },
-    { transform: `translateY(-40px)`, opacity: .95 },
-    { transform: `translateY(-60px)`, opacity: 0 }
+    { transform: `translateY(-32px)`, opacity: .95 },  // ← -40px → -32px
+    { transform: `translateY(-48px)`, opacity: 0 }     // ← -60px → -48px
   ], { duration: 7000, easing: 'linear' });
 
   anim.onfinish = () => line.remove();
 }
+
 
 // 인터벌 시작
 function startTicker(){
