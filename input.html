@@ -39,49 +39,35 @@
   </div>
 </div>
 <script>
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyKiqbUe7jJY5iZpjt6Deq17jHhMlYjUgGL6D_Jz2_p4JPgoDXuMJ5fUSI3wZDFuWwZBQ/exec';  // ← 교체
-const q = s => document.querySelector(s);
-const onlyDigits = s => (s||'').replace(/\D/g,'');
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyKiqbUe7jJY5iZpjt6Deq17jHhMlYjUgGL6D_Jz2_p4JPgoDXuMJ5fUSI3wZDFuWwZBQ/exec'; // /exec 최신 배포 URL
 
-async function send(payload){
-  const r = await fetch(GAS_URL, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(payload)
-  });
-  const j = await r.json().catch(()=>({}));
-  if(!r.ok || !j.ok) throw new Error(j.error||('HTTP '+r.status));
-  return j;
+async function sendForm(data){
+  // 프리플라이트 방지: 헤더 없음 + urlencoded 바디
+  const body = new URLSearchParams(data);
+  const res = await fetch(GAS_URL, { method:'POST', body });  // 헤더 금지
+  // GAS는 JSON을 주지만, 일부 환경에서 CORS로 body 접근이 막히는 경우도 있으니
+  // 응답을 굳이 읽지 않아도 동작하게 UI 처리:
+  if (!res.ok) throw new Error('서버 응답 오류: ' + res.status);
+  return true;
 }
 
-function read(){
-  return {
-    name: q('#name').value.trim()||'익명',
-    phone: onlyDigits(q('#phone').value.trim()),
-    score: Math.max(0, Math.floor(Number(q('#score').value||0))),
-    pin: q('#pin').value.trim()
+document.getElementById('scoreForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const f = e.target;
+  const data = {
+    name: f.name.value.trim() || '익명',
+    score: Math.floor(Number(f.score.value || 0)),
+    phone: (f.phoneLast4?.value?.trim()?.length === 4) ? f.phoneLast4.value : (f.phone?.value || ''),
+    pin: (f.pin?.value || '')
   };
-}
-
-async function handle(){
-  const msg = q('#msg');
-  try{
-    const p = read();
-    if(!p.phone || p.phone.length < 8) throw new Error('전화번호를 확인하세요');
-    if(!(p.score>=0)) throw new Error('점수가 올바르지 않습니다');
-    msg.textContent = '전송 중…';
-    const res = await send(p);
-    msg.innerHTML = `<span class="ok">저장됨</span> • ${res.ts} • ${res.name} • ${res.score.toLocaleString('ko-KR')}점`;
-    q('#score').value='';
-    q('#name').focus();
-  }catch(e){
-    msg.innerHTML = `<span class="err">오류</span> • ${e.message}`;
+  try {
+    await sendForm(data);
+    alert('전송 완료');
+    f.reset();
+  } catch (err) {
+    alert('전송 실패: ' + err.message);
   }
-}
-
-q('#submit').addEventListener('click', handle);
-['#name','#phone','#score','#pin'].forEach(id=>{
-  q(id).addEventListener('keydown', (ev)=>{ if(ev.key==='Enter') handle(); });
 });
 </script>
+
 </body></html>
