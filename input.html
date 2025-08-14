@@ -40,14 +40,14 @@
       </div>
 
       <button type="submit">전송</button>
-      <div id="msg" class="muted">전화번호는 **끝 4자리만 저장**됩니다.</div>
+      <div id="msg" class="muted"> 공개 화면(순위 페이지)에는 <b>끝 4자리만</b> 표시됩니다.</div>
     </form>
   </div>
 </div>
 
 <script>
   // 본인 Apps Script 웹앱 주소 (/exec)
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzNGCBSm8PSMnAMKvepOmyK49GD_eLuGAiaKVmrB3Q1yYNWlWy8ag9O77hE_4EFGmea/exec';
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzVjk8aMrHQG2EirkEdpFob5TEtHBTzByW2sXldyHAEHs_ZNKMxksrxDlnH10byr_kUMA/exec';
 
   const $ = s => document.querySelector(s);
   const onlyDigits = s => (s||'').replace(/\D/g,'');
