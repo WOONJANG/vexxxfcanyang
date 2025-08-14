@@ -4,21 +4,106 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>V-EXX x FC안양 슛팅 챌린지</title>
 <style>
-  :root{--bg:#0f172a;--panel:#0e152b;--text:#e5e7eb;--muted:#9aa5b1;--border:#1f2a44}
-  *{box-sizing:border-box;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans KR','Malgun Gothic',sans-serif}
-   body{margin:0;background:linear-gradient(90deg, #000000 50%, #4f1b87 50%);color:var(--text)}
+<style>
+  /* 브랜드 컬러/기본 변수 */
+  :root{
+    --vexx: #000000;          /* V-EXX 메인 */
+    --anyang: #4f1b87;        /* FC안양 메인 */
+    --text: #e5e7eb;
+    --muted: #9aa5b1;
+    --border: #1f2a44;
+    --panelBase1: rgba(16,20,40,.85);
+    --panelBase2: rgba(9,12,24,.75);
+  }
+
+  *{
+    box-sizing:border-box;
+    font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans KR','Malgun Gothic',sans-serif
+  }
+
+  /* 배경: 좌/우 반반 + 은은한 비네팅 */
+  body{
+    margin:0;
+    background:
+      radial-gradient(120% 120% at 100% 0%, rgba(255,255,255,.06), transparent 50%),
+      radial-gradient(120% 120% at 0% 100%, rgba(255,255,255,.05), transparent 50%),
+      linear-gradient(90deg, var(--vexx) 50%, var(--anyang) 50%);
+    color:var(--text);
+    min-height:100vh;
+  }
+
   .wrap{max-width:1200px;margin:0 auto;padding:20px}
+
   h1{margin:0 0 10px;font-size:clamp(22px,2.6vw,36px);letter-spacing:-.02em}
   h2{margin:24px 0 10px;font-size:clamp(18px,2.2vw,28px);letter-spacing:-.02em}
-  .panel{background:linear-gradient(180deg,var(--panel),#0b1226);border:1px solid var(--border);border-radius:16px;padding:14px}
+
+  /* 패널: 글래스 + 네온 글로우 + 대각선 샤인 효과 */
+  .panel{
+    position:relative;
+    border-radius:16px;
+    padding:14px;
+    background:
+      linear-gradient(180deg, var(--panelBase1), var(--panelBase2)) padding-box,
+      radial-gradient(120% 200% at 0% 0%, rgba(79,27,135,.35), transparent 60%) padding-box;
+    border:1px solid rgba(79,27,135,.5);
+    box-shadow:
+      0 10px 35px rgba(0,0,0,.6),
+      0 0 28px rgba(79,27,135,.35),
+      inset 0 1px 0 rgba(255,255,255,.06);
+    overflow:hidden;
+    backdrop-filter: blur(6px);
+  }
+  /* 퍼플 헤일로 */
+  .panel::before{
+    content:"";
+    position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+    background:
+      radial-gradient(90% 140% at 100% 100%, rgba(79,27,135,.20), transparent 60%),
+      radial-gradient(90% 140% at 0% 0%,     rgba(79,27,135,.12), transparent 60%);
+    mix-blend-mode: screen;
+  }
+  /* 움직이는 대각선 광택 */
+  .panel::after{
+    content:"";
+    position:absolute; pointer-events:none;
+    top:-60%; left:-50%; width:40%; height:220%;
+    background: linear-gradient(120deg,
+                transparent 0%,
+                rgba(255,255,255,.18) 20%,
+                rgba(255,255,255,.06) 35%,
+                transparent 60%);
+    transform: rotate(20deg);
+    animation: panelShine 7s linear infinite;
+    opacity:.6;
+  }
+  @keyframes panelShine{
+    0%{ left:-55%; }
+    100%{ left:110%; }
+  }
+
+  /* 카드/그리드 */
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
-  .card{background:#0b1021;border:1px solid #1b2742;border-radius:14px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+  .card{
+    background:#0b1021;
+    border:1px solid #1b2742;
+    border-radius:14px;
+    padding:14px;
+    box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
+  }
+
   .name{font-size:18px;font-weight:800;color:#c7d2fe;margin-bottom:6px}
   .score{font-size:clamp(28px,4.8vw,56px);font-weight:900;letter-spacing:-.03em;line-height:1}
   .phone{color:#93c5fd;font-weight:700;margin-top:6px}
-  .meta{color:#9aa5b1;font-size:12px;margin-top:6px}
-  .status{color:#9aa5b1;font-size:13px;margin-top:16px}
+  .meta{color:var(--muted);font-size:12px;margin-top:6px}
+  .status{color:var(--muted);font-size:13px;margin-top:16px}
   .empty{opacity:.7}
+
+  /* 모션 줄이기 설정 존중 */
+  @media (prefers-reduced-motion: reduce){
+    .panel::after{ animation:none }
+  }
+</style>
+
 </style>
 </head><body>
 <div class="wrap">
