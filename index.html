@@ -71,18 +71,38 @@ function pickLeaders(rows){
 
 function render(leaders){
   const host = document.querySelector('#leaders');
+  const titleEl = document.querySelector('h1');
+
   if(!leaders.length){
+    titleEl.textContent = '현재 1위';
     host.innerHTML = '<div class="card"><div class="name">NO DATA</div><div class="score">0</div><div class="phone">***-****-0000</div><div class="meta">데이터 없음</div></div>';
     return;
   }
-  host.innerHTML = leaders.map(L=>`
-    <div class="card">
-      <div class="name">${escapeHtml(L.name)}</div>
-      <div class="score">${Number(L.score).toLocaleString('ko-KR')}</div>
-      <div class="phone">${maskLast4(L.last4)}</div>
-      <div class="meta">기록: ${fmt(L.ts)}</div>
-    </div>
-  `).join('');
+
+  if(leaders.length === 1){
+    // 1등 한 명만 표시
+    titleEl.textContent = '현재 1위';
+    const L = leaders[0];
+    host.innerHTML = `
+      <div class="card">
+        <div class="name">${escapeHtml(L.name)}</div>
+        <div class="score">${Number(L.score).toLocaleString('ko-KR')}</div>
+        <div class="phone">${maskLast4(L.last4)}</div>
+        <div class="meta">기록: ${fmt(L.ts)}</div>
+      </div>
+    `;
+  } else {
+    // 동점일 때만 동점 전원 표시
+    titleEl.textContent = `현재 1위 (동점 ${leaders.length}명)`;
+    host.innerHTML = leaders.map(L=>`
+      <div class="card">
+        <div class="name">${escapeHtml(L.name)}</div>
+        <div class="score">${Number(L.score).toLocaleString('ko-KR')}</div>
+        <div class="phone">${maskLast4(L.last4)}</div>
+        <div class="meta">기록: ${fmt(L.ts)}</div>
+      </div>
+    `).join('');
+  }
 }
 
 function escapeHtml(s){
