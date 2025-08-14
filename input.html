@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>입력 — 펀치머신</title>
+<style>
+  body{margin:0;background:#0b1023;color:#e5e7eb;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans KR','Malgun Gothic',sans-serif;display:grid;place-items:center;min-height:100vh}
+  .wrap{width:100%;max-width:520px;padding:20px}
+  .card{background:#0f172a;border:1px solid #233052;border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  h1{margin:0 0 12px;font-size:22px;letter-spacing:-.02em}
+  label{display:block;font-size:13px;color:#cbd5e1;margin:8px 0 6px}
+  input{width:100%;background:#0b1021;border:1px solid #233052;border-radius:12px;padding:14px;color:#e5e7eb;font-size:18px}
+  input:focus{outline:none;box-shadow:0 0 0 4px rgba(34,211,238,.12);border-color:#22d3ee}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  button{width:100%;margin-top:14px;padding:14px;border-radius:12px;border:1px solid #1fbdd1;background:linear-gradient(180deg,#11a0b4,#0f8ea6);color:#001018;font-weight:800;font-size:18px}
+  .muted{color:#94a3b8;font-size:12px;margin-top:8px}
+  .ok{color:#34d399}.err{color:#f87171}
+</style>
+</head><body>
+<div class="wrap">
+  <div class="card">
+    <h1>펀치머신 점수 입력</h1>
+    <label>이름</label>
+    <input id="name" placeholder="예: 김펀치" autocomplete="name"/>
+    <div class="row">
+      <div>
+        <label>전화번호(끝 4자리만 공개)</label>
+        <input id="phone" inputmode="numeric" pattern="[0-9\-\s]{8,}" placeholder="예: 01012345678"/>
+      </div>
+      <div>
+        <label>점수</label>
+        <input id="score" type="number" inputmode="numeric" min="0" max="999999" placeholder="0"/>
+      </div>
+    </div>
+    <label>진행요원 PIN</label>
+    <input id="pin" inputmode="numeric" placeholder="현장 전용"/>
+    <button id="submit">기록 저장(Enter)</button>
+    <div id="msg" class="muted"></div>
+  </div>
+</div>
+<script>
+const GAS_URL = 'PASTE_YOUR_GAS_WEBAPP_URL_HERE';  // ← 교체
+const q = s => document.querySelector(s);
+const onlyDigits = s => (s||'').replace(/\D/g,'');
+
+async function send(payload){
+  const r = await fetch(GAS_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  const j = await r.json().catch(()=>({}));
+  if(!r.ok || !j.ok) throw new Error(j.error||('HTTP '+r.status));
+  return j;
+}
+
+function read(){
+  return {
+    name: q('#name').value.trim()||'익명',
+    phone: onlyDigits(q('#phone').value.trim()),
+    score: Math.max(0, Math.floor(Number(q('#score').value||0))),
+    pin: q('#pin').value.trim()
+  };
+}
+
+async function handle(){
+  const msg = q('#msg');
+  try{
+    const p = read();
+    if(!p.phone || p.phone.length < 8) throw new Error('전화번호를 확인하세요');
+    if(!(p.score>=0)) throw new Error('점수가 올바르지 않습니다');
+    msg.textContent = '전송 중…';
+    const res = await send(p);
+    msg.innerHTML = `<span class="ok">저장됨</span> • ${res.ts} • ${res.name} • ${res.score.toLocaleString('ko-KR')}점`;
+    q('#score').value='';
+    q('#name').focus();
+  }catch(e){
+    msg.innerHTML = `<span class="err">오류</span> • ${e.message}`;
+  }
+}
+
+q('#submit').addEventListener('click', handle);
+['#name','#phone','#score','#pin'].forEach(id=>{
+  q(id).addEventListener('keydown', (ev)=>{ if(ev.key==='Enter') handle(); });
+});
+</script>
+</body></html>
