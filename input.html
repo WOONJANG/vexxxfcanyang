@@ -79,6 +79,7 @@
       msg.innerHTML = `<span class="ok">저장됨</span> • ${new Date().toLocaleString('ko-KR')} • ${p.name} • ${p.score.toLocaleString('ko-KR')}점`;
       f.score.value = '';
       f.phone.value = '';
+      f.name.value = '';
       $('#name').focus();
     }catch(err){
       msg.innerHTML = `<span class="err">전송 실패</span> • ${err.message}`;
