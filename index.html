@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>현재 1위(동점 전원 표시) — 펀치머신</title>
+<style>
+  :root{--bg:#0f172a;--card:#0e152b;--text:#e5e7eb;--muted:#9aa5b1;--border:#1f2a44}
+  *{box-sizing:border-box;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans KR','Malgun Gothic',sans-serif}
+  body{margin:0;background:linear-gradient(180deg,#0b1023,#0c142e 30%,#0f172a);color:var(--text);min-height:100vh;display:grid;place-items:center}
+  .wrap{width:100%;max-width:1100px;padding:24px}
+  h1{margin:0 0 10px;font-size:clamp(22px,2.6vw,36px);letter-spacing:-.02em}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+  .card{background:linear-gradient(180deg,var(--card),#0b1226);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04)}
+  .name{font-size:20px;font-weight:800;color:#c7d2fe;margin-bottom:6px}
+  .score{font-size:clamp(36px,5.5vw,64px);font-weight:900;letter-spacing:-.03em;line-height:1}
+  .phone{color:#93c5fd;font-weight:700;margin-top:6px}
+  .meta{color:#9aa5b1;font-size:12px;margin-top:6px}
+  .status{color:#9aa5b1;font-size:13px;margin-top:14px}
+</style>
+</head><body>
+<div class="wrap">
+  <h1>현재 1위 (동점 전원)</h1>
+  <div id="leaders" class="grid">
+    <div class="card"><div class="name">로딩중…</div><div class="score">0</div><div class="phone">***-****-0000</div><div class="meta">-</div></div>
+  </div>
+  <div id="status" class="status">연결 대기…</div>
+</div>
+<script>
+const CSV_URL = 'PASTE_YOUR_PUBLIC_SHEET_CSV_URL_HERE'; // ← 교체
+const $ = s=>document.querySelector(s);
+const onlyDigits = s => (s||'').replace(/\D/g,'');
+const maskLast4 = d=> `***-****-${(onlyDigits(d)).slice(-4).padStart(4,'0')}`;
+const fmt = d=> new Intl.DateTimeFormat('ko-KR',{dateStyle:'medium',timeStyle:'short'}).format(d);
+
+async function fetchCSV(){
+  const r = await fetch(CSV_URL + (CSV_URL.includes('?')?'&':'?') + 'cb=' + Date.now(), {cache:'no-store'});
+  if(!r.ok) throw new Error('CSV error '+r.status);
+  return await r.text();
+}
+
+// 최소 CSV 파서 (따옴표/쉼표 처리)
+function parseCSV(text){
+  const rows = [];
+  let i=0, f='', row=[], q=false;
+  while(i<text.length){
+    const c=text[i++];
+    if(q){
+      if(c==='"'){ if(text[i]==='"'){ f+='"'; i++; } else q=false; }
+      else f+=c;
+    } else {
+      if(c==='"') q=true;
+      else if(c===','){ row.push(f); f=''; }
+      else if(c==='\n'){ row.push(f); rows.push(row); row=[]; f=''; }
+      else if(c!=='\r') f+=c;
+    }
+  }
+  if(f.length||row.length){ row.push(f); rows.push(row); }
+  return rows;
+}
+
+function pickLeaders(rows){
+  if(!rows||rows.length<2) return [];
+  const head=rows[0].map(s=>s.trim().toLowerCase());
+  const iTS=head.findIndex(h=>/time|timestamp|시각|시간/.test(h));
+  const iN =head.findIndex(h=>/name|이름/.test(h));
+  const iS =head.findIndex(h=>/score|점수/.test(h));
+  const iP =head.findIndex(h=>/last4|4|끝/.test(h));
+  const items = rows.slice(1).filter(r=>r&&r.length).map(r=>({
+    ts:new Date(r[iTS]||r[0]||Date.now()),
+    name:r[iN]||'익명',
+    score:Number(String(r[iS]||0).replace(/[^-\d.]/g,''))||0,
+    last4:String(r[iP]||'0000')
+  })).filter(x=>!isNaN(x.ts.getTime()));
+  if(!items.length) return [];
+  items.sort((a,b)=> b.score-a.score || a.ts-b.ts); // 점수↓, 시간↑
+  const topScore = items[0].score;
+  return items.filter(x=>x.score===topScore);
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+}
+
+function render(leaders){
+  const host = $('#leaders');
+  if(!leaders.length){
+    host.innerHTML = '<div class="card"><div class="name">NO DATA</div><div class="score">0</div><div class="phone">***-****-0000</div><div class="meta">데이터 없음</div></div>';
+    return;
+  }
+  host.innerHTML = leaders.map(L=>`
+    <div class="card">
+      <div class="name">${escapeHtml(L.name)}</div>
+      <div class="score">${Number(L.score).toLocaleString('ko-KR')}</div>
+      <div class="phone">${maskLast4(L.last4)}</div>
+      <div class="meta">기록: ${fmt(L.ts)}</div>
+    </div>
+  `).join('');
+}
+
+let timer=null;
+async function tick(){
+  clearTimeout(timer);
+  try{
+    $('#status').textContent = '동기화 중…';
+    const text=await fetchCSV();
+    const rows=parseCSV(text);
+    const leaders=pickLeaders(rows);
+    render(leaders);
+    $('#status').textContent = '업데이트: ' + fmt(new Date());
+  }catch(e){ $('#status').textContent='오류: '+e.message; }
+  finally{ timer=setTimeout(tick, 5000); } // 5초마다 갱신
+}
+tick();
+</script>
+</body></html>
