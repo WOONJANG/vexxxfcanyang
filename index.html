@@ -2,127 +2,161 @@
 <html lang="ko"><head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>현재 1위(동점 전원 표시) — 펀치머신</title>
+<title>펀치머신 — 현재 1·2·3위 (동점 전부 표시)</title>
 <style>
-  :root{--bg:#0f172a;--card:#0e152b;--text:#e5e7eb;--muted:#9aa5b1;--border:#1f2a44}
+  :root{--bg:#0f172a;--panel:#0e152b;--text:#e5e7eb;--muted:#9aa5b1;--border:#1f2a44}
   *{box-sizing:border-box;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans KR','Malgun Gothic',sans-serif}
-  body{margin:0;background:linear-gradient(180deg,#0b1023,#0c142e 30%,#0f172a);color:var(--text);min-height:100vh;display:grid;place-items:center}
-  .wrap{width:100%;max-width:1100px;padding:24px}
+  body{margin:0;background:linear-gradient(180deg,#0b1023,#0c142e 30%,#0f172a);color:var(--text)}
+  .wrap{max-width:1200px;margin:0 auto;padding:20px}
   h1{margin:0 0 10px;font-size:clamp(22px,2.6vw,36px);letter-spacing:-.02em}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
-  .card{background:linear-gradient(180deg,var(--card),#0b1226);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04)}
-  .name{font-size:20px;font-weight:800;color:#c7d2fe;margin-bottom:6px}
-  .score{font-size:clamp(36px,5.5vw,64px);font-weight:900;letter-spacing:-.03em;line-height:1}
+  h2{margin:24px 0 10px;font-size:clamp(18px,2.2vw,28px);letter-spacing:-.02em}
+  .panel{background:linear-gradient(180deg,var(--panel),#0b1226);border:1px solid var(--border);border-radius:16px;padding:14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+  .card{background:#0b1021;border:1px solid #1b2742;border-radius:14px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+  .name{font-size:18px;font-weight:800;color:#c7d2fe;margin-bottom:6px}
+  .score{font-size:clamp(28px,4.8vw,56px);font-weight:900;letter-spacing:-.03em;line-height:1}
   .phone{color:#93c5fd;font-weight:700;margin-top:6px}
-  .meta{color:var(--muted);font-size:12px;margin-top:6px}
-  .status{color:var(--muted);font-size:13px;margin-top:14px}
+  .meta{color:#9aa5b1;font-size:12px;margin-top:6px}
+  .status{color:#9aa5b1;font-size:13px;margin-top:16px}
+  .empty{opacity:.7}
 </style>
 </head><body>
 <div class="wrap">
-  <h1>현재 1위 (동점 전원)</h1>
-  <div id="leaders" class="grid">
-    <div class="card"><div class="name">로딩중…</div><div class="score">0</div><div class="phone">***-****-0000</div><div class="meta">-</div></div>
+  <h1>현재 순위판</h1>
+
+  <div class="panel">
+    <h2>현재 1위 (1위와 동점 전부 출력)</h2>
+    <div id="rank1" class="grid"><div class="card empty"><div class="name">데이터 없음</div></div></div>
   </div>
+
+  <div class="panel">
+    <h2>현재 2위 (2위와 동점 전부출력)</h2>
+    <div id="rank2" class="grid"><div class="card empty"><div class="name">해당 순위 없음</div></div></div>
+  </div>
+
+  <div class="panel">
+    <h2>현재 3위 (3위와 동점 전부출력)</h2>
+    <div id="rank3" class="grid"><div class="card empty"><div class="name">해당 순위 없음</div></div></div>
+  </div>
+
   <div id="status" class="status">연결 대기…</div>
 </div>
+
 <script>
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSEGHx3StbY2fPU3xY9iwcenoFhiOR-X_VfVokK0oU8BMIEGUFzlg5QImq9crDT4L9zv0D-k_jFN_s6/pub?gid=0&single=true&output=csv'; // ← 공개 시트 CSV 주소
+/** ← 여기만 본인 CSV 주소로 교체 */
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSEGHx3StbY2fPU3xY9iwcenoFhiOR-X_VfVokK0oU8BMIEGUFzlg5QImq9crDT4L9zv0D-k_jFN_s6/pub?gid=0&single=true&output=csv';
+
 const $ = s=>document.querySelector(s);
 const onlyDigits = s => (s||'').replace(/\D/g,'');
 const maskLast4 = d=> `***-****-${(onlyDigits(d)).slice(-4).padStart(4,'0')}`;
 const fmt = d=> new Intl.DateTimeFormat('ko-KR',{dateStyle:'medium',timeStyle:'short'}).format(d);
 
+/* CSV fetch (캐시 회피) */
 async function fetchCSV(){
   const r = await fetch(CSV_URL + (CSV_URL.includes('?')?'&':'?') + 'cb=' + Date.now(), {cache:'no-store'});
   if(!r.ok) throw new Error('CSV error '+r.status);
   return await r.text();
 }
 
+/* CSV parser (따옴표·쉼표 안전) */
 function parseCSV(text){
-  const rows = [];
-  let i=0, f='', row=[], q=false;
+  const rows=[]; let i=0,f='',row=[],q=false;
   while(i<text.length){
     const c=text[i++];
-    if(q){ if(c==='"'){ if(text[i]==='"'){ f+='"'; i++; } else q=false; } else f+=c; }
-    else { if(c==='"') q=true; else if(c===','){ row.push(f); f=''; } else if(c==='\n'){ row.push(f); rows.push(row); row=[]; f=''; } else if(c!=='\r') f+=c; }
+    if(q){
+      if(c==='"'){ if(text[i]==='"'){ f+='"'; i++; } else q=false; }
+      else f+=c;
+    }else{
+      if(c==='"') q=true;
+      else if(c===','){ row.push(f); f=''; }
+      else if(c==='\n'){ row.push(f); rows.push(row); row=[]; f=''; }
+      else if(c!=='\r') f+=c;
+    }
   }
   if(f.length||row.length){ row.push(f); rows.push(row); }
   return rows;
 }
 
-function pickLeaders(rows){
-  if(!rows||rows.length<2) return [];
+/* 행 → 객체 + 정렬(점수↓, 시간↑) */
+function toItems(rows){
+  if(!rows || rows.length<2) return [];
   const head=rows[0].map(s=>s.trim().toLowerCase());
   const iTS=head.findIndex(h=>/time|timestamp|시각|시간/.test(h));
   const iN =head.findIndex(h=>/name|이름/.test(h));
   const iS =head.findIndex(h=>/score|점수/.test(h));
-  const iP =head.findIndex(h=>/last4|4|끝/.test(h));
+  const iP =head.findIndex(h=>/last4|끝|4/.test(h));
   const items = rows.slice(1).filter(r=>r&&r.length).map(r=>({
     ts:new Date(r[iTS]||r[0]||Date.now()),
     name:r[iN]||'익명',
-    score:Number(String(r[iS]||0).replace(/[^\-\d.]/g,''))||0,
+    score:Number(String(r[iS]||0).replace(/[^-\d.]/g,''))||0,
     last4:String(r[iP]||'0000')
   })).filter(x=>!isNaN(x.ts.getTime()));
-  if(!items.length) return [];
   items.sort((a,b)=> b.score-a.score || a.ts-b.ts);
-  const topScore = items[0].score;
-  return items.filter(x=>x.score===topScore);
+  return items;
 }
 
-function render(leaders){
-  const host = document.querySelector('#leaders');
-  const titleEl = document.querySelector('h1');
+/* 상위 3계급(동점 확장) 그룹핑 */
+function top3Groups(sortedItems){
+  const groups=[]; if(!sortedItems.length) return groups;
+  for(const x of sortedItems){
+    if(groups.length===0){
+      groups.push([x]);
+    }else{
+      const cur = groups[groups.length-1];
+      if(x.score === cur[0].score){
+        cur.push(x);                             // 같은 점수 → 같은 그룹(동점)
+      }else if(groups.length < 3){
+        groups.push([x]);                        // 다음 순위 시작
+      }else{
+        const thirdScore = groups[2][0].score;   // 3위 점수와 동점은 포함
+        if(x.score === thirdScore) groups[2].push(x);
+        else break;                              // 3위보다 낮으면 종료
+      }
+    }
+  }
+  // groups[0]=1위, [1]=2위, [2]=3위 (없으면 생략)
+  return groups;
+}
 
-  if(!leaders.length){
-    titleEl.textContent = '현재 1위';
-    host.innerHTML = '<div class="card"><div class="name">NO DATA</div><div class="score">0</div><div class="phone">***-****-0000</div><div class="meta">데이터 없음</div></div>';
+/* 렌더링 */
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
+
+function renderGroup(hostId, group){
+  const host = $(hostId);
+  if(!group || group.length===0){
+    host.innerHTML = '<div class="card empty"><div class="name">해당 순위 없음</div></div>';
     return;
   }
-
-  if(leaders.length === 1){
-    // 1등 한 명만 표시
-    titleEl.textContent = '현재 1위';
-    const L = leaders[0];
-    host.innerHTML = `
-      <div class="card">
-        <div class="name">${escapeHtml(L.name)}</div>
-        <div class="score">${Number(L.score).toLocaleString('ko-KR')}</div>
-        <div class="phone">${maskLast4(L.last4)}</div>
-        <div class="meta">기록: ${fmt(L.ts)}</div>
-      </div>
-    `;
-  } else {
-    // 동점일 때만 동점 전원 표시
-    titleEl.textContent = `현재 1위 (동점 ${leaders.length}명)`;
-    host.innerHTML = leaders.map(L=>`
-      <div class="card">
-        <div class="name">${escapeHtml(L.name)}</div>
-        <div class="score">${Number(L.score).toLocaleString('ko-KR')}</div>
-        <div class="phone">${maskLast4(L.last4)}</div>
-        <div class="meta">기록: ${fmt(L.ts)}</div>
-      </div>
-    `).join('');
-  }
+  host.innerHTML = group.map(L=>`
+    <div class="card">
+      <div class="name">${escapeHtml(L.name)}</div>
+      <div class="score">${Number(L.score).toLocaleString('ko-KR')}</div>
+      <div class="phone">${maskLast4(L.last4)}</div>
+      <div class="meta">기록: ${fmt(L.ts)}</div>
+    </div>
+  `).join('');
 }
 
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
-}
-
+/* 주기 갱신 */
 let timer=null;
 async function tick(){
   clearTimeout(timer);
   try{
-    document.querySelector('#status').textContent = '동기화 중…';
-    const text=await fetchCSV();
-    const rows=parseCSV(text);
-    const leaders=pickLeaders(rows);
-    render(leaders);
-    document.querySelector('#status').textContent = '업데이트: ' + fmt(new Date());
-  }catch(e){ document.querySelector('#status').textContent='오류: '+e.message; }
-  finally{ timer=setTimeout(tick, 5000); }
+    $('#status').textContent='동기화 중…';
+    const text = await fetchCSV();
+    const rows = parseCSV(text);
+    const items= toItems(rows);
+    const groups = top3Groups(items);
+    renderGroup('#rank1', groups[0]);
+    renderGroup('#rank2', groups[1]);
+    renderGroup('#rank3', groups[2]);
+    $('#status').textContent='업데이트: ' + fmt(new Date());
+  }catch(e){
+    $('#status').textContent='오류: ' + e.message;
+  }finally{
+    timer=setTimeout(tick, 5000); // 5초마다 갱신
+  }
 }
-
 tick();
 </script>
 </body></html>
