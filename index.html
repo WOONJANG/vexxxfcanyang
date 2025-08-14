@@ -12,8 +12,8 @@
     --text: #e5e7eb;
     --muted: #9aa5b1;
     --border: #1f2a44;
-    --panelBase1: rgba(16,20,40,.85);
-    --panelBase2: rgba(9,12,24,.75);
+    --panelBase1: rgba(10,12,22,.88);
+    --panelBase2: rgba(6,8,16,.82);
   }
 
   *{
@@ -21,12 +21,12 @@
     font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans KR','Malgun Gothic',sans-serif
   }
 
-  /* 배경: 좌/우 반반 + 은은한 비네팅 */
+  /* 배경: 좌/우 반반 + 검은 비네트(어둡게) */
   body{
     margin:0;
     background:
-      radial-gradient(120% 120% at 100% 0%, rgba(255,255,255,.06), transparent 50%),
-      radial-gradient(120% 120% at 0% 100%, rgba(255,255,255,.05), transparent 50%),
+      radial-gradient(120% 140% at 100% 0%, rgba(0,0,0,.55), transparent 60%),
+      radial-gradient(120% 140% at   0% 100%, rgba(0,0,0,.50), transparent 60%),
       linear-gradient(90deg, var(--vexx) 50%, var(--anyang) 50%);
     color:var(--text);
     min-height:100vh;
@@ -37,44 +37,44 @@
   h1{margin:0 0 10px;font-size:clamp(22px,2.6vw,36px);letter-spacing:-.02em}
   h2{margin:24px 0 10px;font-size:clamp(18px,2.2vw,28px);letter-spacing:-.02em}
 
-  /* 패널: 글래스 + 네온 글로우 + 대각선 샤인 효과 */
+  /* 패널: 글래스 + 보라 글로우(과한 흰광 제거) */
   .panel{
     position:relative;
     border-radius:16px;
     padding:14px;
     background:
       linear-gradient(180deg, var(--panelBase1), var(--panelBase2)) padding-box,
-      radial-gradient(120% 200% at 0% 0%, rgba(79,27,135,.35), transparent 60%) padding-box;
-    border:1px solid rgba(79,27,135,.5);
+      radial-gradient(120% 200% at 0% 0%, rgba(79,27,135,.28), transparent 60%) padding-box;
+    border:1px solid rgba(79,27,135,.45);
     box-shadow:
-      0 10px 35px rgba(0,0,0,.6),
-      0 0 28px rgba(79,27,135,.35),
-      inset 0 1px 0 rgba(255,255,255,.06);
+      0 12px 36px rgba(0,0,0,.7),
+      0 0 22px rgba(79,27,135,.28),
+      inset 0 1px 0 rgba(255,255,255,.04);
     overflow:hidden;
     backdrop-filter: blur(6px);
   }
-  /* 퍼플 헤일로 */
+  /* 퍼플 헤일로(한 톤 다운) */
   .panel::before{
     content:"";
     position:absolute; inset:0; border-radius:inherit; pointer-events:none;
     background:
-      radial-gradient(90% 140% at 100% 100%, rgba(79,27,135,.20), transparent 60%),
-      radial-gradient(90% 140% at 0% 0%,     rgba(79,27,135,.12), transparent 60%);
+      radial-gradient(90% 140% at 100% 100%, rgba(79,27,135,.18), transparent 60%),
+      radial-gradient(90% 140% at 0% 0%,     rgba(79,27,135,.10), transparent 60%);
     mix-blend-mode: screen;
   }
-  /* 움직이는 대각선 광택 */
+  /* 대각선 광택(강도↓) */
   .panel::after{
     content:"";
     position:absolute; pointer-events:none;
     top:-60%; left:-50%; width:40%; height:220%;
     background: linear-gradient(120deg,
                 transparent 0%,
-                rgba(255,255,255,.18) 20%,
-                rgba(255,255,255,.06) 35%,
+                rgba(255,255,255,.10) 20%,
+                rgba(255,255,255,.04) 35%,
                 transparent 60%);
     transform: rotate(20deg);
-    animation: panelShine 7s linear infinite;
-    opacity:.6;
+    animation: panelShine 8s linear infinite;
+    opacity:.45;
   }
   @keyframes panelShine{
     0%{ left:-55%; }
@@ -88,7 +88,7 @@
     border:1px solid #1b2742;
     border-radius:14px;
     padding:14px;
-    box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
+    box-shadow:0 8px 24px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.03);
   }
 
   .name{font-size:18px;font-weight:800;color:#c7d2fe;margin-bottom:6px}
@@ -102,8 +102,6 @@
   @media (prefers-reduced-motion: reduce){
     .panel::after{ animation:none }
   }
-</style>
-
 </style>
 </head><body>
 <div class="wrap">
